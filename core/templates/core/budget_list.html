@@ -1,0 +1,28 @@
+{% extends "core/base.html" %}
+{% block title %}Presupuestos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0"><i class="bi bi-piggy-bank"></i> Presupuestos</h4>
+  <a href="{% url 'budget_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nuevo</a>
+</div>
+<div class="row g-3">
+  {% for b in budgets %}
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h5 class="card-title">{{ b.name }}</h5>
+        <p class="card-text text-muted small">{{ b.description|truncatewords:20|default:"Sin descripción" }}</p>
+        <p class="mb-1 small">Miembros: <strong>{{ b.members.count }}</strong></p>
+      </div>
+      <div class="card-footer bg-transparent d-flex justify-content-between">
+        <a href="{% url 'budget_members' pk=b.pk %}" class="btn btn-sm btn-outline-info"><i class="bi bi-people"></i></a>
+        <a href="{% url 'budget_edit' pk=b.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+        <a href="{% url 'budget_assign' pk=b.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-person-plus"></i></a>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12"><div class="alert alert-info">No hay presupuestos creados.</div></div>
+  {% endfor %}
+</div>
+{% endblock %}

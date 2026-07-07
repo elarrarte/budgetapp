@@ -1,0 +1,26 @@
+{% extends "core/base.html" %}
+{% block title %}Categorías{% endblock %}
+{% block content %}
+{% include "core/_budget_nav.html" %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0"><i class="bi bi-tags"></i> Categorías</h4>
+  <a href="{% url 'category_create' budget_pk=budget.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Nueva</a>
+</div>
+<div class="row g-2">
+  {% for cat in categories %}
+  <div class="col-12 col-sm-6 col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <span>{{ cat.name }}</span>
+        <div class="btn-group btn-group-sm">
+          <a href="{% url 'category_edit' budget_pk=budget.pk pk=cat.pk %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+          <a href="{% url 'category_delete' budget_pk=budget.pk pk=cat.pk %}" class="btn btn-outline-danger" onclick="return confirm('¿Eliminar categoría?')"><i class="bi bi-trash"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12"><div class="alert alert-info">Sin categorías. Creá una.</div></div>
+  {% endfor %}
+</div>
+{% endblock %}

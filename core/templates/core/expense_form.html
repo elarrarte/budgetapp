@@ -1,0 +1,73 @@
+{% extends "core/base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}{% if editing %}Editar{% else %}Nuevo{% endif %} gasto{% endblock %}
+{% block extra_head %}
+<style>
+  #installments-section { display: none; }
+</style>
+{% endblock %}
+{% block content %}
+{% include "core/_budget_nav.html" %}
+<div class="row justify-content-center">
+  <div class="col-11 col-sm-10 col-md-8 col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h4 class="card-title mb-3">{% if editing %}Editar{% else %}Nuevo{% endif %} gasto</h4>
+        <form method="post" id="expenseForm">
+          {% csrf_token %}
+          {{ form|crispy }}
+
+          <div class="mb-3" id="installments-section">
+            <label class="form-label">Cuotas</label>
+            <div id="installments-container">
+              <div class="row g-2 align-items-center mb-2">
+                <div class="col-6">
+                  <input type="number" name="installments_total" id="id_installments_total" class="form-control" min="1" value="1" placeholder="Cantidad">
+                </div>
+                <div class="col-6">
+                  <button type="button" class="btn btn-outline-primary w-100" onclick="generateInstallments()">Generar cuotas</button>
+                </div>
+              </div>
+              <div id="installment-fields"></div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 mt-3">Guardar</button>
+          <a href="{% url 'expense_list' budget_pk=budget.pk %}" class="btn btn-outline-secondary w-100 mt-2">Cancelar</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  const paymentTypeField = document.querySelector('[name="payment_type"]');
+  const installmentsSection = document.getElementById('installments-section');
+
+  function toggleInstallments() {
+    if (paymentTypeField.value === 'card') {
+      installmentsSection.style.display = 'block';
+    } else {
+      installmentsSection.style.display = 'none';
+    }
+  }
+
+  function generateInstallments() {
+    const n = parseInt(document.getElementById('id_installments_total').value) || 1;
+    const container = document.getElementById('installment-fields');
+    container.innerHTML = '';
+    for (let i = 1; i <= n; i++) {
+      const div = document.createElement('div');
+      div.className = 'mb-2';
+      div.innerHTML = `<label class="form-label small">Monto cuota ${i}</label>
+        <input type="number" name="installment_${i}" step="0.01" class="form-control" placeholder="$${i}" required>`;
+      container.appendChild(div);
+    }
+  }
+
+  paymentTypeField.addEventListener('change', toggleInstallments);
+  toggleInstallments();
+  generateInstallments();
+</script>
+{% endblock %}

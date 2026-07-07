@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Asignar usuario{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-11 col-sm-8 col-md-6 col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h4 class="card-title mb-1">Asignar usuario</h4>
+        <p class="text-muted small mb-3">Presupuesto: <strong>{{ budget.name }}</strong></p>
+        <form method="post">
+          {% csrf_token %}
+          {{ form|crispy }}
+          <button type="submit" class="btn btn-primary w-100 mt-3">Asignar</button>
+          <a href="{% url 'budget_list' %}" class="btn btn-outline-secondary w-100 mt-2">Volver</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
