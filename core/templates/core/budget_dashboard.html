@@ -4,8 +4,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 {% endblock %}
 {% block content %}
-{% include "core/_budget_nav.html" %}
-
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
   <h4 class="mb-0"><i class="bi bi-bar-chart"></i> {{ budget.name }}</h4>
   <div class="d-flex align-items-center gap-2">
@@ -25,6 +23,10 @@
           {% endfor %}
         </select>
       </div>
+      <div class="col-auto d-flex gap-1">
+        <button type="button" class="btn btn-sm btn-{{ user.accent_color }}" onclick="navigateMonth(-1)">←</button>
+        <button type="button" class="btn btn-sm btn-{{ user.accent_color }}" onclick="navigateMonth(1)">→</button>
+      </div>
     </form>
   </div>
 </div>
@@ -34,7 +36,7 @@
     <div class="card border-primary shadow-sm">
       <div class="card-body text-center">
         <h6 class="card-subtitle text-muted">Total {{ month }}/{{ year }}</h6>
-        <h3 class="text-primary mt-2">${{ total }}</h3>
+        <h3 class="text-{{ user.accent_color }} mt-2">${{ total }}</h3>
       </div>
     </div>
   </div>
@@ -149,5 +151,17 @@
       }
     });
   });
+
+  function navigateMonth(delta) {
+    const monthSel = document.querySelector('[name="month"]');
+    const yearSel = document.querySelector('[name="year"]');
+    let m = parseInt(monthSel.value) + delta;
+    let y = parseInt(yearSel.value);
+    if (m < 1) { m = 12; y--; }
+    if (m > 12) { m = 1; y++; }
+    monthSel.value = m;
+    yearSel.value = y;
+    monthSel.form.submit();
+  }
 </script>
 {% endblock %}

@@ -11,7 +11,7 @@
         <form method="post">
           {% csrf_token %}
           {{ form|crispy }}
-          <button type="submit" class="btn btn-primary w-100 mt-3">Asignar</button>
+          <button type="submit" class="btn btn-{{ user.accent_color }} w-100 mt-3">Asignar</button>
           <a href="{% url 'budget_list' %}" class="btn btn-outline-secondary w-100 mt-2">Volver</a>
         </form>
       </div>

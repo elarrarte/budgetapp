@@ -7,7 +7,7 @@ Aplicación web en Django para gestionar presupuestos colaborativos con soporte 
 - **Python 3** + **Django 6.x**
 - **SQLite** (base de datos)
 - **Bootstrap 5.3** (interfaz responsive, dark mode)
-- **Chart.js** (gráficos en reportes)
+- **Chart.js** (gráficos en dashboard)
 - **django-crispy-forms** + **crispy-bootstrap5**
 
 ## Roles
@@ -15,7 +15,7 @@ Aplicación web en Django para gestionar presupuestos colaborativos con soporte 
 | Rol | Acciones |
 |---|---|
 | **Admin** (staff) | Crear usuarios, crear presupuestos, asignar/remover usuarios a presupuestos |
-| **Usuario miembro** | Gestionar categorías del presupuesto, registrar gastos, consultar por rango de fechas, ver reportes |
+| **Usuario miembro** | Gestionar categorías del presupuesto, registrar gastos, ver dashboard con chart y detalle mensual |
 
 ## Modelos de datos
 
@@ -31,20 +31,20 @@ Aplicación web en Django para gestionar presupuestos colaborativos con soporte 
 - `budget` (FK), `user` (FK), `added_by` (FK), `added_at`
 
 ### `Category`
-- `name`, `budget` (FK), `created_by` (FK), `created_at`
+- `name`, `color` (hex, ej. `#e6194b`), `budget` (FK), `created_by` (FK), `created_at`
 
 ### `Expense` (gasto)
 - `budget` (FK), `category` (FK), `description`, `expense_date`
 - `payment_type`: `cash` (efectivo) o `card` (tarjeta)
-- `total_amount`, `created_by` (FK), `created_at`
+- `created_by` (FK), `created_at`
 
 ### `ExpenseInstallment` (cuota)
-- `expense` (FK), `installment_number`, `amount`
-- `effective_month`, `effective_year` — mes y año en que esta cuota impacta
+- `expense` (FK), `installment_number`, `amount` (IntegerField)
+- `effective_date` — fecha en que esta cuota impacta
 
 #### Lógica de cuotas
 - **Efectivo**: se crea 1 cuota que impacta en el mismo mes del gasto
-- **Tarjeta**: se crean N cuotas que impactan en los meses siguientes al del gasto (el usuario indica el monto de cada cuota individualmente)
+- **Tarjeta**: se crean N cuotas con el mismo monto que impactan en los meses siguientes al del gasto (el usuario indica cantidad de cuotas y monto por cuota)
 
 ## Autenticación
 
@@ -72,10 +72,9 @@ Aplicación web en Django para gestionar presupuestos colaborativos con soporte 
 | Ruta | Descripción |
 |---|---|
 | `/dashboard/` | Dashboard principal con resumen de presupuestos del usuario |
-| `/budgets/<id>/dashboard/` | Dashboard del presupuesto por mes |
-| `/budgets/<id>/categories/` | CRUD de categorías |
-| `/budgets/<id>/expenses/` | CRUD de gastos + filtro por rango de fechas |
-| `/budgets/<id>/reports/` | Reportes con gráfico de torta y resumen por categoría |
+| `/budgets/<id>/dashboard/` | Dashboard del presupuesto con chart, resumen por categoría y detalle de gastos |
+| `/budgets/<id>/categories/` | CRUD de categorías (con selector de color) |
+| `/budgets/<id>/expenses/` | CRUD de gastos con filtro por mes-año |
 
 ## Inicio rápido
 
@@ -86,8 +85,8 @@ source venv/bin/activate
 # 2. Crear la base de datos (ya ejecutado, pero si empezás de cero)
 # python manage.py migrate
 
-# 3. Iniciar servidor
-python manage.py runserver
+# 3. Iniciar servidor (accesible desde cualquier dispositivo en la red)
+python manage.py runserver 0.0.0.0:8000
 
 # 4. Abrir en el navegador
 # http://localhost:8000
@@ -100,6 +99,29 @@ python manage.py runserver
 
 > Cambiar la contraseña del admin en producción.
 
+## Funcionalidades
+
+### Navegación
+- **Menú único responsive**: navbar con hamburguesa en mobile que agrupa navegación del presupuesto (Dashboard, Categorías, Gastos) y menú de usuario
+- **Período persistente**: el mes/año seleccionado se guarda en sesión al navegar entre secciones
+- **Flechas ← →**: navegación rápida entre meses sin abrir el selector
+
+### Gestión de gastos
+- **Efectivo**: monto único, impacta en el mes de la compra
+- **Tarjeta**: cantidad de cuotas + monto por cuota (mismo valor para todas); las cuotas impactan desde el mes siguiente
+- **Botón "Hoy"**: setea la fecha actual automáticamente en el formulario
+- **Guardar y crear otro**: guarda el gasto actual y abre un formulario limpio para el siguiente
+
+### Dashboard
+- Chart.js doughnut con colores de categoría
+- Resumen por categoría (monto y porcentaje)
+- Detalle de gastos con todas las cuotas del período
+- Cards de total, efectivo y tarjeta
+
+### Categorías
+- CRUD completo con selector de color (`<input type="color">`)
+- Color visible en el chart del dashboard
+
 ## Uso básico
 
 1. Iniciar sesión como **admin** → ir al panel de administración
@@ -107,7 +129,7 @@ python manage.py runserver
 3. Crear un presupuesto (proyecto)
 4. Asignar usuarios al presupuesto
 5. Cada usuario inicia sesión con su contraseña temporal, la cambia, y accede al presupuesto
-6. Dentro del presupuesto: crear categorías, registrar gastos, consultar por fechas, ver reportes
+6. Dentro del presupuesto: crear categorías (con color), registrar gastos (efectivo/tarjeta), ver dashboard mensual
 
 ## Desarrollo
 
@@ -139,7 +161,7 @@ budget/
 │   ├── forms.py               # Formularios
 │   ├── urls.py                # Rutas
 │   ├── admin.py               # Registro en admin de Django
-│   └── templates/core/        # Templates HTML con Bootstrap 5
+│   └── templates/core/        # Templates HTML con Bootstrap 5 (navbar único en base.html)
 ├── manage.py
 ├── requirements.txt
 └── README.md

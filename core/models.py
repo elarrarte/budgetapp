@@ -4,6 +4,25 @@ from django.db import models
 
 class User(AbstractUser):
     force_password_change = models.BooleanField(default=True)
+    theme = models.CharField(
+        max_length=10,
+        default="dark",
+        choices=[("dark", "Oscuro"), ("light", "Claro")],
+        verbose_name="tema",
+    )
+    accent_color = models.CharField(
+        max_length=10,
+        default="primary",
+        choices=[
+            ("primary", "Azul"),
+            ("danger", "Rojo"),
+            ("warning", "Naranja"),
+            ("success", "Verde"),
+            ("violet", "Violeta"),
+            ("secondary", "Gris"),
+        ],
+        verbose_name="color de acento",
+    )
 
     class Meta:
         verbose_name = "usuario"

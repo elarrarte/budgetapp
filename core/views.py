@@ -2,6 +2,7 @@ import calendar
 from datetime import date
 
 from django.contrib import messages
+from django.db.models import Sum
 
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -54,6 +55,22 @@ def password_change(request):
     else:
         form = PasswordChangeForm(request.user)
     return render(request, "core/password_change.html", {"form": form})
+
+
+@login_required
+def toggle_theme(request):
+    new = "light" if request.user.theme == "dark" else "dark"
+    request.user.theme = new
+    request.user.save(update_fields=["theme"])
+    return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+
+
+@login_required
+def set_accent(request, color):
+    if color in ["primary", "danger", "warning", "success", "violet", "secondary"]:
+        request.user.accent_color = color
+        request.user.save(update_fields=["accent_color"])
+    return redirect(request.META.get("HTTP_REFERER", "dashboard"))
 
 
 @login_required

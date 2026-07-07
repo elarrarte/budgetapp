@@ -7,7 +7,6 @@
 </style>
 {% endblock %}
 {% block content %}
-{% include "core/_budget_nav.html" %}
 <div class="row justify-content-center">
   <div class="col-11 col-sm-10 col-md-8 col-lg-6">
     <div class="card shadow-sm">
@@ -17,10 +16,18 @@
           {% csrf_token %}
 
           {% for field in form %}
-            {% if field.name != "installments_total" and field.name != "installment_amount" and field.name != "amount" %}
+            {% if field.name != "installments_total" and field.name != "installment_amount" and field.name != "amount" and field.name != "expense_date" %}
               {{ field|as_crispy_field }}
             {% endif %}
           {% endfor %}
+
+          <div class="mb-3">
+            <label for="id_expense_date" class="form-label">Fecha del gasto</label>
+            <div class="input-group">
+              <input type="text" name="expense_date" value="{% if form.expense_date.value %}{{ form.expense_date.value }}{% endif %}" class="form-control" placeholder="dd/mm/aaaa" required id="id_expense_date">
+              <button type="button" class="btn btn-outline-secondary" onclick="setToday()">Hoy</button>
+            </div>
+          </div>
 
           <div id="amount-section">
             {{ form.amount|as_crispy_field }}
@@ -38,9 +45,9 @@
             </div>
           </div>
 
-          <button type="submit" class="btn btn-primary w-100 mt-3">Guardar</button>
+          <button type="submit" class="btn btn-{{ user.accent_color }} w-100 mt-3">Guardar</button>
           {% if not editing %}
-          <button type="submit" name="_addanother" class="btn btn-outline-primary w-100 mt-2">Guardar y crear otro</button>
+          <button type="submit" name="_addanother" class="btn btn-outline-{{ user.accent_color }} w-100 mt-2">Guardar y crear otro</button>
           {% endif %}
           <a href="{% url 'expense_list' budget_pk=budget.pk %}" class="btn btn-outline-secondary w-100 mt-2">Cancelar</a>
         </form>
@@ -66,5 +73,13 @@
 
   paymentTypeField.addEventListener('change', togglePaymentFields);
   togglePaymentFields();
+
+  function setToday() {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    document.getElementById('id_expense_date').value = `${day}/${month}/${year}`;
+  }
 </script>
 {% endblock %}

@@ -12,6 +12,8 @@ urlpatterns = [
         name="password_change",
     ),
     path("dashboard/", views.dashboard, name="dashboard"),
+    path("theme/toggle/", views.toggle_theme, name="toggle_theme"),
+    path("theme/accent/<str:color>/", views.set_accent, name="set_accent"),
     # Admin
     path("admin-panel/", views.admin_panel, name="admin_panel"),
     path("admin-panel/users/create/", views.admin_user_create, name="admin_user_create"),

@@ -10,7 +10,7 @@
         <form method="post">
           {% csrf_token %}
           {{ form|crispy }}
-          <button type="submit" class="btn btn-primary w-100 mt-3">Crear usuario</button>
+          <button type="submit" class="btn btn-{{ user.accent_color }} w-100 mt-3">Crear usuario</button>
           <a href="{% url 'admin_panel' %}" class="btn btn-outline-secondary w-100 mt-2">Cancelar</a>
         </form>
       </div>

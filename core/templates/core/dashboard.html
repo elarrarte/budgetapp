@@ -11,7 +11,7 @@
         <h5 class="card-title">{{ item.budget.name }}</h5>
         <p class="card-text text-muted small">{{ item.budget.description|truncatewords:20 }}</p>
         <p class="mb-1">Gastos este mes: <strong>${{ item.month_total }}</strong></p>
-        <a href="{% url 'budget_dashboard' pk=item.budget.pk %}" class="btn btn-outline-primary btn-sm mt-2 w-100">
+        <a href="{% url 'budget_dashboard' pk=item.budget.pk %}" class="btn btn-outline-{{ user.accent_color }} btn-sm mt-2 w-100">
           <i class="bi bi-eye"></i> Ver
         </a>
       </div>
