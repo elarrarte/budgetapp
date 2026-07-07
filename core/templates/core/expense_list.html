@@ -8,23 +8,24 @@
   <a href="{% url 'expense_create' budget_pk=budget.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Nuevo gasto</a>
 </div>
 
-<div class="card shadow-sm mb-3">
-  <div class="card-body">
-    <form method="get" class="row g-2 align-items-end">
-      <div class="col-12 col-sm-4">
-        <label class="form-label small">Desde</label>
-        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ form.date_from.value|default:'' }}">
-      </div>
-      <div class="col-12 col-sm-4">
-        <label class="form-label small">Hasta</label>
-        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ form.date_to.value|default:'' }}">
-      </div>
-      <div class="col-12 col-sm-4 d-flex gap-2">
-        <button type="submit" class="btn btn-sm btn-primary flex-fill"><i class="bi bi-search"></i> Filtrar</button>
-        <a href="{% url 'expense_list' budget_pk=budget.pk %}" class="btn btn-sm btn-outline-secondary flex-fill">Limpiar</a>
-      </div>
-    </form>
-  </div>
+<div class="d-flex align-items-center gap-2 mb-3">
+  <span class="text-muted small">Período</span>
+  <form method="get" class="row g-2 align-items-center">
+    <div class="col-auto">
+      <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+        {% for m in months %}
+        <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <select name="year" class="form-select form-select-sm" onchange="this.form.submit()">
+        {% for y in years %}
+        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
 </div>
 
 <div class="card shadow-sm">
@@ -36,9 +37,9 @@
             <th>Fecha</th>
             <th>Descripción</th>
             <th>Categoría</th>
-            <th>Monto total</th>
             <th>Tipo</th>
             <th>Cuotas</th>
+            <th class="text-end">Monto</th>
             <th></th>
           </tr>
         </thead>
@@ -48,9 +49,9 @@
             <td>{{ e.expense_date|date:"d/m/Y" }}</td>
             <td>{{ e.description }}</td>
             <td>{{ e.category.name|default:"—" }}</td>
-            <td>${{ e.total_amount|floatformat:2 }}</td>
             <td>{% if e.payment_type == "cash" %}<span class="badge bg-success">Efectivo</span>{% else %}<span class="badge bg-warning text-dark">Tarjeta</span>{% endif %}</td>
             <td>{{ e.installments.count }}</td>
+            <td class="text-end">${{ e.installment_amount }}</td>
             <td class="text-end">
               <a href="{% url 'expense_edit' budget_pk=budget.pk pk=e.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
               <a href="{% url 'expense_delete' budget_pk=budget.pk pk=e.pk %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar gasto?')"><i class="bi bi-trash"></i></a>

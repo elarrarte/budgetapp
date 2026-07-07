@@ -71,9 +71,4 @@ urlpatterns = [
         views.expense_delete,
         name="expense_delete",
     ),
-    path(
-        "budgets/<int:budget_pk>/reports/",
-        views.reports,
-        name="reports",
-    ),
 ]

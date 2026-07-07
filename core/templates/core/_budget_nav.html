@@ -8,7 +8,5 @@
   <a class="nav-link {% if 'expense' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'expense_list' budget_pk=budget.pk %}">
     <i class="bi bi-cash"></i><span class="d-none d-sm-inline ms-1">Gastos</span>
   </a>
-  <a class="nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}" href="{% url 'reports' budget_pk=budget.pk %}">
-    <i class="bi bi-file-earmark-bar-graph"></i><span class="d-none d-sm-inline ms-1">Reportes</span>
-  </a>
+
 </nav>

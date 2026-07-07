@@ -51,6 +51,7 @@ class BudgetMembership(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=200, verbose_name="nombre")
+    color = models.CharField(max_length=7, default="#000000", verbose_name="color")
     budget = models.ForeignKey(
         Budget, on_delete=models.CASCADE, related_name="categories"
     )
@@ -87,13 +88,15 @@ class Expense(models.Model):
     payment_type = models.CharField(
         max_length=4, choices=PAYMENT_CHOICES, verbose_name="tipo de pago"
     )
-    total_amount = models.DecimalField(
-        max_digits=12, decimal_places=2, verbose_name="monto total"
-    )
     created_by = models.ForeignKey(
         User, on_delete=models.CASCADE, verbose_name="creado por"
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="creado el")
+
+    @property
+    def installment_amount(self):
+        inst = self.installments.first()
+        return inst.amount if inst else 0
 
     class Meta:
         verbose_name = "gasto"
@@ -101,7 +104,7 @@ class Expense(models.Model):
         ordering = ["-expense_date"]
 
     def __str__(self):
-        return f"{self.description} — ${self.total_amount}"
+        return f"{self.description}"
 
 
 class ExpenseInstallment(models.Model):
@@ -111,20 +114,13 @@ class ExpenseInstallment(models.Model):
     installment_number = models.PositiveSmallIntegerField(
         verbose_name="número de cuota"
     )
-    amount = models.DecimalField(
-        max_digits=12, decimal_places=2, verbose_name="monto"
-    )
-    effective_month = models.PositiveSmallIntegerField(
-        verbose_name="mes efectivo"
-    )
-    effective_year = models.PositiveSmallIntegerField(
-        verbose_name="año efectivo"
-    )
+    amount = models.IntegerField(verbose_name="monto")
+    effective_date = models.DateField(verbose_name="fecha efectiva")
 
     class Meta:
         verbose_name = "cuota"
         verbose_name_plural = "cuotas"
-        ordering = ["effective_year", "effective_month", "installment_number"]
+        ordering = ["effective_date", "installment_number"]
 
     def __str__(self):
         return f"Cuota {self.installment_number} de {self.expense.description}"

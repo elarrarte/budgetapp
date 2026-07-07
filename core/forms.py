@@ -51,16 +51,28 @@ class BudgetAssignForm(forms.Form):
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
-        fields = ("name",)
-        labels = {"name": "Nombre de la categoría"}
+        fields = ("name", "color")
+        labels = {"name": "Nombre de la categoría", "color": "Color"}
+        widgets = {
+            "color": forms.TextInput(attrs={"type": "color"}),
+        }
 
 
 class ExpenseForm(forms.ModelForm):
+    amount = forms.IntegerField(
+        required=False, label="Monto",
+    )
     installments_total = forms.IntegerField(
         required=False,
         min_value=1,
         label="Cantidad de cuotas",
         initial=1,
+        widget=forms.HiddenInput(),
+    )
+    installment_amount = forms.IntegerField(
+        required=False,
+        label="Monto por cuota",
+        widget=forms.HiddenInput(),
     )
 
     class Meta:
@@ -70,17 +82,15 @@ class ExpenseForm(forms.ModelForm):
             "category",
             "expense_date",
             "payment_type",
-            "total_amount",
         )
         labels = {
             "description": "Descripción",
             "category": "Categoría",
             "expense_date": "Fecha del gasto",
             "payment_type": "Tipo de pago",
-            "total_amount": "Monto total",
         }
         widgets = {
-            "expense_date": forms.DateInput(attrs={"type": "date"}),
+            "expense_date": forms.DateInput(attrs={"placeholder": "dd/mm/aaaa"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -90,26 +100,28 @@ class ExpenseForm(forms.ModelForm):
             self.fields["category"].queryset = budget.categories.all()
         if not self.instance.pk:
             self.fields["payment_type"].initial = "cash"
+        if self.instance.pk:
+            installments = self.instance.installments.all()
+            if installments:
+                first = installments.first()
+                if self.instance.payment_type == "card":
+                    self.fields["installments_total"].initial = installments.count()
+                    self.fields["installment_amount"].initial = first.amount
+                else:
+                    self.fields["amount"].initial = first.amount
 
+    def clean(self):
+        cleaned_data = super().clean()
+        payment_type = cleaned_data.get("payment_type")
+        amount = cleaned_data.get("amount")
+        n = cleaned_data.get("installments_total")
+        if payment_type == "card":
+            inst_amount = cleaned_data.get("installment_amount")
+            if not n or not inst_amount:
+                raise forms.ValidationError(
+                    "Para pagos con tarjeta debe indicar cantidad de cuotas y monto por cuota."
+                )
+        elif not amount:
+            raise forms.ValidationError("Debe indicar el monto.")
+        return cleaned_data
 
-class InstallmentForm(forms.Form):
-    def __init__(self, *args, **kwargs):
-        n = kwargs.pop("n", 1)
-        super().__init__(*args, **kwargs)
-        for i in range(1, n + 1):
-            self.fields[f"installment_{i}"] = forms.DecimalField(
-                max_digits=12,
-                decimal_places=2,
-                label=f"Monto cuota {i}",
-            )
-
-
-class DateRangeForm(forms.Form):
-    date_from = forms.DateField(
-        label="Desde",
-        widget=forms.DateInput(attrs={"type": "date"}),
-    )
-    date_to = forms.DateField(
-        label="Hasta",
-        widget=forms.DateInput(attrs={"type": "date"}),
-    )

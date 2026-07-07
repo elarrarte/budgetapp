@@ -1,29 +1,32 @@
 {% extends "core/base.html" %}
 {% block title %}{{ budget.name }}{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+{% endblock %}
 {% block content %}
 {% include "core/_budget_nav.html" %}
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
   <h4 class="mb-0"><i class="bi bi-bar-chart"></i> {{ budget.name }}</h4>
-  <form method="get" class="row g-2 align-items-center">
-    <div class="col-auto">
-      <select name="month" class="form-select form-select-sm">
-        {% for m in months %}
-        <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-auto">
-      <select name="year" class="form-select form-select-sm">
-        {% for y in years %}
-        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-auto">
-      <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-filter"></i></button>
-    </div>
-  </form>
+  <div class="d-flex align-items-center gap-2">
+    <span class="text-muted small">Período</span>
+    <form method="get" class="row g-2 align-items-center">
+      <div class="col-auto">
+        <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+          {% for m in months %}
+          <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <select name="year" class="form-select form-select-sm" onchange="this.form.submit()">
+          {% for y in years %}
+          <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+  </div>
 </div>
 
 <div class="row g-3 mb-4">
@@ -31,63 +34,120 @@
     <div class="card border-primary shadow-sm">
       <div class="card-body text-center">
         <h6 class="card-subtitle text-muted">Total {{ month }}/{{ year }}</h6>
-        <h3 class="text-primary mt-2">${{ total|floatformat:2 }}</h3>
+        <h3 class="text-primary mt-2">${{ total }}</h3>
       </div>
     </div>
   </div>
-  <div class="col-12 col-md-8">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="card-subtitle text-muted mb-2">Por categoría</h6>
-        {% if by_category %}
-        {% for name, amount in by_category %}
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span>{{ name }}</span>
-          <strong>${{ amount|floatformat:2 }}</strong>
-        </div>
-        {% endfor %}
-        {% else %}
-        <p class="text-muted mb-0">Sin gastos este mes</p>
-        {% endif %}
+  <div class="col-6 col-md-4">
+    <div class="card border-success shadow-sm">
+      <div class="card-body text-center">
+        <h6 class="card-subtitle text-muted">Efectivo</h6>
+        <h3 class="text-success mt-2">${{ by_payment.cash }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="card border-warning shadow-sm">
+      <div class="card-body text-center">
+        <h6 class="card-subtitle text-muted">Tarjeta</h6>
+        <h3 class="text-warning mt-2">${{ by_payment.card }}</h3>
       </div>
     </div>
   </div>
 </div>
 
-<div class="card shadow-sm">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <span>Cuotas del mes</span>
-    <span class="badge bg-primary">{{ installments|length }}</span>
+<div class="row g-3">
+  <div class="col-12 col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-subtitle text-muted mb-3">Gastos por categoría</h6>
+        <canvas id="chartCategory" height="250"></canvas>
+      </div>
+    </div>
   </div>
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover mb-0">
-        <thead class="table-dark">
-          <tr>
-            <th>Descripción</th>
-            <th>Categoría</th>
-            <th>Cuota</th>
-            <th>Monto</th>
-            <th>Tipo</th>
-            <th>Usuario</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for inst in installments %}
-          <tr>
-            <td>{{ inst.expense.description }}</td>
-            <td>{{ inst.expense.category.name|default:"—" }}</td>
-            <td>{{ inst.installment_number }}{% if inst.expense.installments.count > 1 %}/{{ inst.expense.installments.count }}{% endif %}</td>
-            <td>${{ inst.amount|floatformat:2 }}</td>
-            <td>{% if inst.expense.payment_type == "cash" %}<span class="badge bg-success">Efectivo</span>{% else %}<span class="badge bg-warning text-dark">Tarjeta</span>{% endif %}</td>
-            <td>{{ inst.expense.created_by.username }}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="6" class="text-center text-muted">Sin cuotas para este mes</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  <div class="col-12 col-lg-6 d-flex flex-column gap-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-subtitle text-muted mb-3">Resumen por categoría</h6>
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr><th>Categoría</th><th class="text-end">Monto</th><th class="text-end">%</th></tr>
+            </thead>
+            <tbody>
+              {% for cat in categories_data %}
+              <tr>
+                <td>{{ cat.name }}</td>
+                <td class="text-end">${{ cat.total }}</td>
+                <td class="text-end">{{ cat.percentage }}%</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="3" class="text-center text-muted">Sin datos</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-list-ul"></i> Detalle de gastos</h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>Fecha</th>
+                <th>Descripción</th>
+                <th>Categoría</th>
+                <th>Cuota</th>
+                <th class="text-end">Monto</th>
+                <th>Tipo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for inst in installments %}
+              <tr>
+                <td>{{ inst.effective_date|date:"d/m/Y" }}</td>
+                <td>{{ inst.expense.description }}</td>
+                <td>{{ inst.expense.category.name|default:"—" }}</td>
+                <td>{{ inst.installment_number }}{% if inst.expense.installments.count > 1 %}/{{ inst.expense.installments.count }}{% endif %}</td>
+                <td class="text-end">${{ inst.amount }}</td>
+                <td>{% if inst.expense.payment_type == "cash" %}<span class="badge bg-success">Efectivo</span>{% else %}<span class="badge bg-warning text-dark">Tarjeta</span>{% endif %}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="6" class="text-center text-muted">Sin gastos en el período</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const ctx = document.getElementById('chartCategory');
+    if (!ctx) return;
+    const labels = [{% for cat in categories_data %}'{{ cat.name }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const data = [{% for cat in categories_data %}{{ cat.total|stringformat:'.2f' }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const colors = [{% for cat in categories_data %}'{{ cat.color }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{ data: data, backgroundColor: colors, borderWidth: 1 }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } }
+        }
+      }
+    });
+  });
+</script>
 {% endblock %}

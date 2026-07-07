@@ -1,12 +1,15 @@
+import calendar
 from datetime import date
 
 from django.contrib import messages
+
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.views import LoginView
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from .forms import (
@@ -14,9 +17,7 @@ from .forms import (
     BudgetForm,
     CategoryForm,
     CustomUserCreationForm,
-    DateRangeForm,
     ExpenseForm,
-    InstallmentForm,
 )
 from .models import Budget, Category, Expense, ExpenseInstallment, User
 
@@ -31,10 +32,10 @@ class CustomLoginView(LoginView):
     def get_success_url(self):
         user = self.request.user
         if user.force_password_change:
-            return "password_change"
+            return reverse("password_change")
         if user.is_staff:
-            return "admin_panel"
-        return "dashboard"
+            return reverse("admin_panel")
+        return reverse("dashboard")
 
 
 @login_required
@@ -69,8 +70,8 @@ def dashboard(request):
         total = (
             ExpenseInstallment.objects.filter(
                 expense__budget=b,
-                effective_month=current_month,
-                effective_year=current_year,
+                effective_date__year=current_year,
+                effective_date__month=current_month,
             ).aggregate(total=Sum("amount"))["total"]
             or 0
         )
@@ -212,23 +213,52 @@ def _get_budget_or_404(budget_pk, user):
 def budget_dashboard(request, pk):
     budget = _get_budget_or_404(pk, request.user)
     now_local = timezone.localtime()
-    m = request.GET.get("month", str(now_local.month))
-    y = request.GET.get("year", str(now_local.year))
-    month, year = int(m), int(y)
+    m = request.GET.get("month")
+    y = request.GET.get("year")
+    if m and y:
+        month, year = int(m), int(y)
+        request.session[f"dash_month_{pk}"] = month
+        request.session[f"dash_year_{pk}"] = year
+    else:
+        month = request.session.get(f"dash_month_{pk}", now_local.month)
+        year = request.session.get(f"dash_year_{pk}", now_local.year)
 
     installments = ExpenseInstallment.objects.filter(
         expense__budget=budget,
-        effective_month=month,
-        effective_year=year,
-    ).select_related("expense", "expense__category", "expense__created_by")
+        effective_date__year=year,
+        effective_date__month=month,
+    ).select_related(
+        "expense", "expense__category", "expense__created_by"
+    ).prefetch_related("expense__installments")
 
     total = sum(i.amount for i in installments)
 
-    by_category = {}
+    by_category_data = {}
     for inst in installments:
         cat_name = inst.expense.category.name if inst.expense.category else "Sin categoría"
-        by_category.setdefault(cat_name, 0)
-        by_category[cat_name] += inst.amount
+        cat_color = inst.expense.category.color if inst.expense.category else "#6c757d"
+        cat = by_category_data.setdefault(
+            cat_name,
+            {"total": 0, "count": 0, "color": cat_color},
+        )
+        cat["total"] += inst.amount
+        cat["count"] += 1
+
+    by_payment = {"cash": 0, "card": 0}
+    for inst in installments:
+        t = inst.expense.payment_type
+        by_payment[t] = by_payment.get(t, 0) + inst.amount
+
+    categories_data = [
+        {
+            "name": name,
+            "total": data["total"],
+            "count": data["count"],
+            "percentage": round(data["total"] / total * 100, 1) if total else 0,
+            "color": data["color"],
+        }
+        for name, data in sorted(by_category_data.items())
+    ]
 
     return render(
         request,
@@ -236,8 +266,9 @@ def budget_dashboard(request, pk):
         {
             "budget": budget,
             "installments": installments,
+            "categories_data": categories_data,
+            "by_payment": by_payment,
             "total": total,
-            "by_category": sorted(by_category.items()),
             "month": month,
             "year": year,
             "months": range(1, 13),
@@ -309,16 +340,24 @@ def category_delete(request, budget_pk, pk):
 @login_required
 def expense_list(request, budget_pk):
     budget = _get_budget_or_404(budget_pk, request.user)
-    expenses = Expense.objects.filter(budget=budget).select_related(
-        "category", "created_by"
-    )
+    now_local = timezone.localtime()
+    m = request.GET.get("month")
+    y = request.GET.get("year")
+    if m and y:
+        month, year = int(m), int(y)
+        request.session[f"exp_month_{budget_pk}"] = month
+        request.session[f"exp_year_{budget_pk}"] = year
+    else:
+        month = request.session.get(f"exp_month_{budget_pk}", now_local.month)
+        year = request.session.get(f"exp_year_{budget_pk}", now_local.year)
 
-    form = DateRangeForm(request.GET or None)
-    if form.is_valid():
-        expenses = expenses.filter(
-            expense_date__gte=form.cleaned_data["date_from"],
-            expense_date__lte=form.cleaned_data["date_to"],
-        )
+    expenses = Expense.objects.filter(
+        budget=budget,
+        expense_date__year=year,
+        expense_date__month=month,
+    ).select_related(
+        "category", "created_by"
+    ).prefetch_related("installments")
 
     return render(
         request,
@@ -326,7 +365,10 @@ def expense_list(request, budget_pk):
         {
             "budget": budget,
             "expenses": expenses,
-            "form": form,
+            "month": month,
+            "year": year,
+            "months": range(1, 13),
+            "years": range(2020, 2031),
         },
     )
 
@@ -336,69 +378,56 @@ def expense_create(request, budget_pk):
     budget = _get_budget_or_404(budget_pk, request.user)
     if request.method == "POST":
         form = ExpenseForm(request.POST, budget=budget)
-        installment_form = None
-        payment_type = request.POST.get("payment_type")
-        if payment_type == "card":
-            n = int(request.POST.get("installments_total", 1))
-            installment_form = InstallmentForm(request.POST, n=n)
-            if form.is_valid() and installment_form.is_valid():
-                expense = form.save(commit=False)
-                expense.budget = budget
-                expense.created_by = request.user
-                expense.save()
-                _create_card_installments(expense, installment_form, n)
+        if form.is_valid():
+            expense = form.save(commit=False)
+            expense.budget = budget
+            expense.created_by = request.user
+            expense.save()
+            if expense.payment_type == "card":
+                n = form.cleaned_data["installments_total"]
+                amount = form.cleaned_data["installment_amount"]
+                _create_card_installments(expense, amount, n)
                 messages.success(request, "Gasto con tarjeta registrado.")
-                return redirect("expense_list", budget_pk=budget.pk)
-        else:
-            if form.is_valid():
-                expense = form.save(commit=False)
-                expense.budget = budget
-                expense.created_by = request.user
-                expense.save()
-                _create_cash_installment(expense)
+            else:
+                _create_cash_installment(expense, form.cleaned_data["amount"])
                 messages.success(request, "Gasto registrado.")
-                return redirect("expense_list", budget_pk=budget.pk)
+            if "_addanother" in request.POST:
+                return redirect("expense_create", budget_pk=budget.pk)
+            return redirect("expense_list", budget_pk=budget.pk)
     else:
         form = ExpenseForm(budget=budget)
-        installment_form = None
     return render(
         request,
         "core/expense_form.html",
-        {
-            "form": form,
-            "installment_form": installment_form,
-            "budget": budget,
-            "editing": False,
-        },
+        {"form": form, "budget": budget, "editing": False},
     )
 
 
-def _create_cash_installment(expense):
+def _create_cash_installment(expense, amount):
     ExpenseInstallment.objects.create(
         expense=expense,
         installment_number=1,
-        amount=expense.total_amount,
-        effective_month=expense.expense_date.month,
-        effective_year=expense.expense_date.year,
+        amount=amount,
+        effective_date=expense.expense_date,
     )
 
 
-def _create_card_installments(expense, installment_form, n):
+def _create_card_installments(expense, amount, n):
     d = expense.expense_date
     for i in range(1, n + 1):
-        effective = date(d.year, d.month, 1)
-        effective_month = effective.month + i
-        effective_year = effective.year
-        if effective_month > 12:
-            effective_month -= 12
-            effective_year += 1
-        amount = installment_form.cleaned_data[f"installment_{i}"]
+        m = d.month + i
+        y = d.year
+        if m > 12:
+            m -= 12
+            y += 1
+        last_day = calendar.monthrange(y, m)[1]
+        day = min(d.day, last_day)
+        effective_date = date(y, m, day)
         ExpenseInstallment.objects.create(
             expense=expense,
             installment_number=i,
             amount=amount,
-            effective_month=effective_month,
-            effective_year=effective_year,
+            effective_date=effective_date,
         )
 
 
@@ -411,29 +440,14 @@ def expense_edit(request, budget_pk, pk):
         form = ExpenseForm(request.POST, instance=expense, budget=budget)
         if form.is_valid():
             expense = form.save(commit=False)
+            expense.save()
+            expense.installments.all().delete()
             if expense.payment_type == "card":
-                n = int(request.POST.get("installments_total", 1))
-                installment_form = InstallmentForm(request.POST, n=n)
-                if installment_form.is_valid():
-                    expense.save()
-                    expense.installments.all().delete()
-                    _create_card_installments(expense, installment_form, n)
-                else:
-                    return render(
-                        request,
-                        "core/expense_form.html",
-                        {
-                            "form": form,
-                            "installment_form": installment_form,
-                            "budget": budget,
-                            "editing": True,
-                            "expense": expense,
-                        },
-                    )
+                n = form.cleaned_data["installments_total"]
+                amount = form.cleaned_data["installment_amount"]
+                _create_card_installments(expense, amount, n)
             else:
-                expense.save()
-                expense.installments.all().delete()
-                _create_cash_installment(expense)
+                _create_cash_installment(expense, form.cleaned_data["amount"])
             messages.success(request, "Gasto actualizado.")
             return redirect("expense_list", budget_pk=budget.pk)
     else:
@@ -441,13 +455,7 @@ def expense_edit(request, budget_pk, pk):
     return render(
         request,
         "core/expense_form.html",
-        {
-            "form": form,
-            "installment_form": None,
-            "budget": budget,
-            "editing": True,
-            "expense": expense,
-        },
+        {"form": form, "budget": budget, "editing": True, "expense": expense},
     )
 
 
@@ -460,59 +468,4 @@ def expense_delete(request, budget_pk, pk):
     return redirect("expense_list", budget_pk=budget.pk)
 
 
-@login_required
-def reports(request, budget_pk):
-    budget = _get_budget_or_404(budget_pk, request.user)
-    now_local = timezone.localtime()
-    m = request.GET.get("month", str(now_local.month))
-    y = request.GET.get("year", str(now_local.year))
-    month, year = int(m), int(y)
 
-    installments = ExpenseInstallment.objects.filter(
-        expense__budget=budget,
-        effective_month=month,
-        effective_year=year,
-    ).select_related("expense", "expense__category")
-
-    total = sum(i.amount for i in installments)
-
-    by_category_data = {}
-    for inst in installments:
-        cat_name = inst.expense.category.name if inst.expense.category else "Sin categoría"
-        cat = by_category_data.setdefault(
-            cat_name,
-            {"total": 0, "count": 0, "items": []},
-        )
-        cat["total"] += inst.amount
-        cat["count"] += 1
-        cat["items"].append(inst)
-
-    by_payment = {"cash": 0, "card": 0}
-    for inst in installments:
-        t = inst.expense.payment_type
-        by_payment[t] = by_payment.get(t, 0) + inst.amount
-
-    categories_data = [
-        {
-            "name": name,
-            "total": data["total"],
-            "count": data["count"],
-            "percentage": round(data["total"] / total * 100, 1) if total else 0,
-        }
-        for name, data in sorted(by_category_data.items())
-    ]
-
-    return render(
-        request,
-        "core/reports.html",
-        {
-            "budget": budget,
-            "categories_data": categories_data,
-            "by_payment": by_payment,
-            "total": total,
-            "month": month,
-            "year": year,
-            "months": range(1, 13),
-            "years": range(2020, 2031),
-        },
-    )
