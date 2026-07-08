@@ -26,6 +26,9 @@ SECRET_KEY = 'django-insecure-7urtyr1wfu=oe#&*0uk#j$k8f-wc!8)^l%odf-8u&58851nz&n
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
+CSRF_TRUSTED_ORIGINS = ["https://budget.sye.ar"]
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 
 # Application definition

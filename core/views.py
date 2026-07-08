@@ -67,7 +67,7 @@ def toggle_theme(request):
 
 @login_required
 def set_accent(request, color):
-    if color in ["primary", "danger", "warning", "success", "violet", "secondary"]:
+    if color in ["primary", "danger", "warning", "success", "secondary"]:
         request.user.accent_color = color
         request.user.save(update_fields=["accent_color"])
     return redirect(request.META.get("HTTP_REFERER", "dashboard"))

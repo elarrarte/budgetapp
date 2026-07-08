@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load currency_filters %}
 {% block title %}{{ budget.name }}{% endblock %}
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -36,7 +37,7 @@
     <div class="card border-primary shadow-sm">
       <div class="card-body text-center">
         <h6 class="card-subtitle text-muted">Total {{ month }}/{{ year }}</h6>
-        <h3 class="text-{{ user.accent_color }} mt-2">${{ total }}</h3>
+        <h3 class="text-{{ user.accent_color }} mt-2">${{ total|format_amount }}</h3>
       </div>
     </div>
   </div>
@@ -44,7 +45,7 @@
     <div class="card border-success shadow-sm">
       <div class="card-body text-center">
         <h6 class="card-subtitle text-muted">Efectivo</h6>
-        <h3 class="text-success mt-2">${{ by_payment.cash }}</h3>
+        <h3 class="text-success mt-2">${{ by_payment.cash|format_amount }}</h3>
       </div>
     </div>
   </div>
@@ -52,7 +53,7 @@
     <div class="card border-warning shadow-sm">
       <div class="card-body text-center">
         <h6 class="card-subtitle text-muted">Tarjeta</h6>
-        <h3 class="text-warning mt-2">${{ by_payment.card }}</h3>
+        <h3 class="text-warning mt-2">${{ by_payment.card|format_amount }}</h3>
       </div>
     </div>
   </div>
@@ -80,7 +81,7 @@
               {% for cat in categories_data %}
               <tr>
                 <td>{{ cat.name }}</td>
-                <td class="text-end">${{ cat.total }}</td>
+                <td class="text-end">${{ cat.total|format_amount }}</td>
                 <td class="text-end">{{ cat.percentage }}%</td>
               </tr>
               {% empty %}
@@ -115,7 +116,7 @@
                 <td>{{ inst.expense.description }}</td>
                 <td>{{ inst.expense.category.name|default:"—" }}</td>
                 <td>{{ inst.installment_number }}{% if inst.expense.installments.count > 1 %}/{{ inst.expense.installments.count }}{% endif %}</td>
-                <td class="text-end">${{ inst.amount }}</td>
+                <td class="text-end">${{ inst.amount|format_amount }}</td>
                 <td>{% if inst.expense.payment_type == "cash" %}<span class="badge bg-success">Efectivo</span>{% else %}<span class="badge bg-warning text-dark">Tarjeta</span>{% endif %}</td>
               </tr>
               {% empty %}

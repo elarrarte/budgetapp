@@ -1,5 +1,6 @@
 {% extends "core/base.html" %}
 {% load crispy_forms_tags %}
+{% load currency_filters %}
 {% block title %}{% if editing %}Editar{% else %}Nuevo{% endif %} gasto{% endblock %}
 {% block extra_head %}
 <style>
@@ -30,7 +31,10 @@
           </div>
 
           <div id="amount-section">
-            {{ form.amount|as_crispy_field }}
+            <div class="mb-3">
+              <label for="id_amount" class="form-label requiredField">Monto</label>
+              <input type="text" name="amount" id="id_amount" class="form-control" inputmode="numeric" value="{% if form.amount.value %}{{ form.amount.value|format_amount }}{% endif %}" {% if not editing and form.payment_type.value != 'card' %}required{% endif %}>
+            </div>
           </div>
 
           <div class="mb-3" id="installments-section">
@@ -40,7 +44,7 @@
                 <input type="number" name="installments_total" id="id_installments_total" class="form-control" min="1" value="{{ form.installments_total.value|default:1 }}" placeholder="Cantidad" required>
               </div>
               <div class="col-6">
-                <input type="number" name="installment_amount" id="id_installment_amount" class="form-control" value="{% if form.installment_amount.value %}{{ form.installment_amount.value }}{% endif %}" placeholder="Monto por cuota" required>
+                <input type="text" name="installment_amount" id="id_installment_amount" class="form-control" inputmode="numeric" value="{% if form.installment_amount.value %}{{ form.installment_amount.value|format_amount }}{% endif %}" placeholder="Monto por cuota" required>
               </div>
             </div>
           </div>
@@ -73,6 +77,24 @@
 
   paymentTypeField.addEventListener('change', togglePaymentFields);
   togglePaymentFields();
+
+  function formatNumberInput(input) {
+    const pos = input.selectionStart;
+    const len = input.value.length;
+    const digits = input.value.replace(/\D/g, '');
+    if (!digits) { input.value = ''; return; }
+    const formatted = parseInt(digits, 10).toLocaleString('es-AR');
+    input.value = formatted;
+    const diff = input.value.length - len;
+    input.setSelectionRange(pos + diff, pos + diff);
+  }
+
+  document.getElementById('id_amount').addEventListener('input', function () {
+    formatNumberInput(this);
+  });
+  document.getElementById('id_installment_amount').addEventListener('input', function () {
+    formatNumberInput(this);
+  });
 
   function setToday() {
     const d = new Date();

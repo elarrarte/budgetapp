@@ -59,7 +59,7 @@ class CategoryForm(forms.ModelForm):
 
 
 class ExpenseForm(forms.ModelForm):
-    amount = forms.IntegerField(
+    amount = forms.CharField(
         required=False, label="Monto",
     )
     installments_total = forms.IntegerField(
@@ -69,7 +69,7 @@ class ExpenseForm(forms.ModelForm):
         initial=1,
         widget=forms.HiddenInput(),
     )
-    installment_amount = forms.IntegerField(
+    installment_amount = forms.CharField(
         required=False,
         label="Monto por cuota",
         widget=forms.HiddenInput(),
@@ -109,6 +109,24 @@ class ExpenseForm(forms.ModelForm):
                     self.fields["installment_amount"].initial = first.amount
                 else:
                     self.fields["amount"].initial = first.amount
+
+    def clean_amount(self):
+        value = self.cleaned_data.get("amount")
+        if not value:
+            return None
+        try:
+            return int(str(value).replace(".", ""))
+        except (ValueError, TypeError):
+            return value
+
+    def clean_installment_amount(self):
+        value = self.cleaned_data.get("installment_amount")
+        if not value:
+            return None
+        try:
+            return int(str(value).replace(".", ""))
+        except (ValueError, TypeError):
+            return value
 
     def clean(self):
         cleaned_data = super().clean()

@@ -18,7 +18,6 @@ class User(AbstractUser):
             ("danger", "Rojo"),
             ("warning", "Naranja"),
             ("success", "Verde"),
-            ("violet", "Violeta"),
             ("secondary", "Gris"),
         ],
         verbose_name="color de acento",
