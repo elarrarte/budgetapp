@@ -1,0 +1,14 @@
+[Unit]
+Description=BudgetApp Django Application
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/git/personal/budgetapp
+ExecStart=%h/git/personal/budgetapp/venv/bin/python manage.py runserver 0.0.0.0:8000
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

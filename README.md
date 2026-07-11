@@ -147,6 +147,38 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
+## Instalación como servicio systemd (usuario)
+
+```bash
+# Copiar el service unit
+cp deploy/bugdetapp.service ~/.config/systemd/user/
+
+# Recargar systemd y habilitar
+systemctl --user daemon-reload
+systemctl --user enable bugdetapp.service
+systemctl --user start bugdetapp.service
+
+# Ver logs
+journalctl --user -u bugdetapp.service -f
+```
+
+### Personalizar sin modificar el service unit
+
+Crear `~/.config/systemd/user/bugdetapp.service.d/override.conf`:
+
+```ini
+[Service]
+# Ejemplo: cambiar puerto
+ExecStart=
+ExecStart=%h/git/personal/budgetapp/venv/bin/python manage.py runserver 0.0.0.0:8080
+```
+
+```bash
+mkdir -p ~/.config/systemd/user/bugdetapp.service.d/
+systemctl --user daemon-reload
+systemctl --user restart bugdetapp.service
+```
+
 ## Estructura del proyecto
 
 ```
@@ -162,6 +194,8 @@ budget/
 │   ├── urls.py                # Rutas
 │   ├── admin.py               # Registro en admin de Django
 │   └── templates/core/        # Templates HTML con Bootstrap 5 (navbar único en base.html)
+├── deploy/                    # Archivos de despliegue
+│   └── bugdetapp.service      # Service unit systemd
 ├── manage.py
 ├── requirements.txt
 └── README.md
