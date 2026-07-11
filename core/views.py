@@ -2,7 +2,7 @@ import calendar
 from datetime import date
 
 from django.contrib import messages
-from django.db.models import Sum
+from django.db.models import OuterRef, Subquery, Sum
 
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -368,10 +368,17 @@ def expense_list(request, budget_pk):
         month = request.session.get(f"exp_month_{budget_pk}", now_local.month)
         year = request.session.get(f"exp_year_{budget_pk}", now_local.year)
 
+    current_inst = ExpenseInstallment.objects.filter(
+        expense=OuterRef("pk"),
+        effective_date__year=year,
+        effective_date__month=month,
+    )
     expenses = Expense.objects.filter(
         budget=budget,
         installments__effective_date__year=year,
         installments__effective_date__month=month,
+    ).annotate(
+        app_date=Subquery(current_inst.values("effective_date")[:1]),
     ).distinct().select_related(
         "category", "created_by"
     ).prefetch_related("installments")

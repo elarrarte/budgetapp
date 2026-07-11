@@ -37,7 +37,8 @@
       <table class="table table-hover mb-0 align-middle">
         <thead class="table-dark">
           <tr>
-            <th>Fecha</th>
+            <th>Creación</th>
+            <th>Aplicación</th>
             <th>Descripción</th>
             <th>Categoría</th>
             <th>Tipo</th>
@@ -50,6 +51,7 @@
           {% for e in expenses %}
           <tr>
             <td>{{ e.expense_date|date:"d/m/Y" }}</td>
+            <td>{{ e.app_date|date:"d/m/Y" }}</td>
             <td>{{ e.description }}</td>
             <td>{{ e.category.name|default:"—" }}</td>
             <td>{% if e.payment_type == "cash" %}<span class="badge bg-success">Efectivo</span>{% else %}<span class="badge bg-warning text-dark">Tarjeta</span>{% endif %}</td>
@@ -61,7 +63,7 @@
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="7" class="text-center text-muted">Sin gastos registrados</td></tr>
+          <tr><td colspan="8" class="text-center text-muted">Sin gastos registrados</td></tr>
           {% endfor %}
         </tbody>
       </table>

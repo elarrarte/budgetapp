@@ -102,7 +102,7 @@ class Expense(models.Model):
         Category, on_delete=models.SET_NULL, null=True, related_name="expenses"
     )
     description = models.CharField(max_length=300, verbose_name="descripción")
-    expense_date = models.DateField(verbose_name="fecha del gasto")
+    expense_date = models.DateField(verbose_name="fecha de creación")
     payment_type = models.CharField(
         max_length=4, choices=PAYMENT_CHOICES, verbose_name="tipo de pago"
     )

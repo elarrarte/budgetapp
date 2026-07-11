@@ -86,7 +86,7 @@ class ExpenseForm(forms.ModelForm):
         labels = {
             "description": "Descripción",
             "category": "Categoría",
-            "expense_date": "Fecha del gasto",
+            "expense_date": "Fecha de creación",
             "payment_type": "Tipo de pago",
         }
         widgets = {

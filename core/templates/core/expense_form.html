@@ -30,7 +30,7 @@
           {% endfor %}
 
           <div class="mb-3">
-            <label for="id_expense_date" class="form-label">Fecha del gasto</label>
+            <label for="id_expense_date" class="form-label">Fecha de creación</label>
             <div class="input-group">
               <input type="text" name="expense_date" value="{% if form.is_bound %}{{ form.expense_date.value }}{% elif form.expense_date.value %}{{ form.expense_date.value|date:"d/m/Y" }}{% endif %}" class="form-control {% if form.expense_date.errors %}is-invalid{% endif %}" placeholder="dd/mm/aaaa" required id="id_expense_date">
               <button type="button" class="btn btn-outline-secondary" onclick="setToday()">Hoy</button>
