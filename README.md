@@ -147,7 +147,41 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
+## Instalación completa desde cero
+
+### Prerrequisitos
+
+- **Git** — para clonar el repositorio
+- **Python 3.12+** — `python --version` o `python3 --version`
+- **python3-venv** — `apt install python3-venv` (Debian/Ubuntu)
+
+### Pasos
+
+```bash
+# 1. Clonar el repositorio
+git clone git@github.com:elarrarte/budgetapp.git
+cd budgetapp
+
+# 2. Crear virtualenv e instalar dependencias
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 3. Migrar base de datos
+python manage.py migrate
+
+# 4. Crear superusuario (admin)
+python manage.py createsuperuser
+
+# 5. Instalar servicio systemd (ver sección siguiente)
+```
+
+> Si `python` no existe en tu sistema, usar `python3`.
+> Para recargar cambios del modelo: `python manage.py makemigrations && python manage.py migrate`
+
 ## Instalación como servicio systemd (usuario)
+
+> Asegurate de haber completado los pasos 1 a 4 de la sección anterior.
 
 ```bash
 # Copiar el service unit
