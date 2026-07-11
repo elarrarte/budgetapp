@@ -370,9 +370,9 @@ def expense_list(request, budget_pk):
 
     expenses = Expense.objects.filter(
         budget=budget,
-        expense_date__year=year,
-        expense_date__month=month,
-    ).select_related(
+        installments__effective_date__year=year,
+        installments__effective_date__month=month,
+    ).distinct().select_related(
         "category", "created_by"
     ).prefetch_related("installments")
 

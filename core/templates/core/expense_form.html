@@ -13,6 +13,13 @@
     <div class="card shadow-sm">
       <div class="card-body p-4">
         <h4 class="card-title mb-3">{% if editing %}Editar{% else %}Nuevo{% endif %} gasto</h4>
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+          </div>
+        {% endif %}
+
         <form method="post" id="expenseForm">
           {% csrf_token %}
 
@@ -25,15 +32,25 @@
           <div class="mb-3">
             <label for="id_expense_date" class="form-label">Fecha del gasto</label>
             <div class="input-group">
-              <input type="text" name="expense_date" value="{% if form.expense_date.value %}{{ form.expense_date.value }}{% endif %}" class="form-control" placeholder="dd/mm/aaaa" required id="id_expense_date">
+              <input type="text" name="expense_date" value="{% if form.is_bound %}{{ form.expense_date.value }}{% elif form.expense_date.value %}{{ form.expense_date.value|date:"d/m/Y" }}{% endif %}" class="form-control {% if form.expense_date.errors %}is-invalid{% endif %}" placeholder="dd/mm/aaaa" required id="id_expense_date">
               <button type="button" class="btn btn-outline-secondary" onclick="setToday()">Hoy</button>
             </div>
+            {% if form.expense_date.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.expense_date.errors %}{{ error }}{% endfor %}
+              </div>
+            {% endif %}
           </div>
 
           <div id="amount-section">
             <div class="mb-3">
               <label for="id_amount" class="form-label requiredField">Monto</label>
-              <input type="text" name="amount" id="id_amount" class="form-control" inputmode="numeric" value="{% if form.amount.value %}{{ form.amount.value|format_amount }}{% endif %}" {% if not editing and form.payment_type.value != 'card' %}required{% endif %}>
+              <input type="text" name="amount" id="id_amount" class="form-control {% if form.amount.errors %}is-invalid{% endif %}" inputmode="numeric" value="{% if form.amount.value %}{{ form.amount.value|format_amount }}{% endif %}" {% if not editing and form.payment_type.value != 'card' %}required{% endif %}>
+              {% if form.amount.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.amount.errors %}{{ error }}{% endfor %}
+                </div>
+              {% endif %}
             </div>
           </div>
 
@@ -41,10 +58,20 @@
             <label class="form-label">Cuotas</label>
             <div class="row g-2">
               <div class="col-6">
-                <input type="number" name="installments_total" id="id_installments_total" class="form-control" min="1" value="{{ form.installments_total.value|default:1 }}" placeholder="Cantidad" required>
+                <input type="number" name="installments_total" id="id_installments_total" class="form-control {% if form.installments_total.errors %}is-invalid{% endif %}" min="1" value="{{ form.installments_total.value|default:1 }}" placeholder="Cantidad" required>
+                {% if form.installments_total.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.installments_total.errors %}{{ error }}{% endfor %}
+                  </div>
+                {% endif %}
               </div>
               <div class="col-6">
-                <input type="text" name="installment_amount" id="id_installment_amount" class="form-control" inputmode="numeric" value="{% if form.installment_amount.value %}{{ form.installment_amount.value|format_amount }}{% endif %}" placeholder="Monto por cuota" required>
+                <input type="text" name="installment_amount" id="id_installment_amount" class="form-control {% if form.installment_amount.errors %}is-invalid{% endif %}" inputmode="numeric" value="{% if form.installment_amount.value %}{{ form.installment_amount.value|format_amount }}{% endif %}" placeholder="Monto por cuota" required>
+                {% if form.installment_amount.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.installment_amount.errors %}{{ error }}{% endfor %}
+                  </div>
+                {% endif %}
               </div>
             </div>
           </div>
