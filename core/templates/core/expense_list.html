@@ -37,10 +37,10 @@
       <table class="table table-hover mb-0 align-middle">
         <thead class="table-dark">
           <tr>
-            <th><a href="?month={{ month }}&year={{ year }}&sort={% if sort == 'creacion' %}-creacion{% else %}creacion{% endif %}" class="text-decoration-none text-reset">Creación{% if sort == 'creacion' %} ▲{% elif sort == '-creacion' %} ▼{% endif %}</a></th>
-            <th><a href="?month={{ month }}&year={{ year }}&sort={% if sort == 'aplicacion' %}-aplicacion{% else %}aplicacion{% endif %}" class="text-decoration-none text-reset">Aplicación{% if sort == 'aplicacion' %} ▲{% elif sort == '-aplicacion' %} ▼{% endif %}</a></th>
+            <th><a href="#" onclick="sortTable(0);return false" class="text-decoration-none text-reset">Creación<span class="sort-indicator"></span></a></th>
+            <th><a href="#" onclick="sortTable(1);return false" class="text-decoration-none text-reset">Aplicación<span class="sort-indicator"></span></a></th>
             <th>Descripción</th>
-            <th><a href="?month={{ month }}&year={{ year }}&sort={% if sort == 'categoria' %}-categoria{% else %}categoria{% endif %}" class="text-decoration-none text-reset">Categoría{% if sort == 'categoria' %} ▲{% elif sort == '-categoria' %} ▼{% endif %}</a></th>
+            <th><a href="#" onclick="sortTable(3);return false" class="text-decoration-none text-reset">Categoría<span class="sort-indicator"></span></a></th>
             <th>Tipo</th>
             <th>Cuotas</th>
             <th class="text-end">Monto</th>
@@ -73,6 +73,37 @@
 {% endblock %}
 {% block extra_js %}
 <script>
+  let sortState = { col: null, asc: true };
+
+  function getSortValue(text) {
+    const dateMatch = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (dateMatch) return new Date(dateMatch[3], dateMatch[2] - 1, dateMatch[1]).getTime();
+    const num = parseFloat(text.replace(/[$.]/g, ''));
+    if (!isNaN(num)) return num;
+    return text.toLowerCase();
+  }
+
+  function sortTable(colIndex) {
+    const table = document.querySelector('.table-hover');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    if (rows.length <= 1 && rows[0]?.querySelector('td[colspan]')) return;
+
+    const asc = sortState.col === colIndex ? !sortState.asc : true;
+    sortState = { col: colIndex, asc };
+
+    rows.sort((a, b) => {
+      const va = getSortValue(a.cells[colIndex]?.textContent.trim() || '');
+      const vb = getSortValue(b.cells[colIndex]?.textContent.trim() || '');
+      return typeof va === 'number' ? (asc ? va - vb : vb - va) : asc ? (va > vb ? 1 : -1) : (vb > va ? 1 : -1);
+    });
+
+    rows.forEach(r => tbody.appendChild(r));
+    document.querySelectorAll('.sort-indicator').forEach(el => el.textContent = '');
+    const indicator = table.querySelectorAll('th a .sort-indicator')[colIndex === 0 ? 0 : colIndex === 1 ? 1 : 2];
+    if (indicator) indicator.textContent = asc ? ' ▲' : ' ▼';
+  }
+
   function navigateMonth(delta) {
     const monthSel = document.querySelector('[name="month"]');
     const yearSel = document.querySelector('[name="year"]');

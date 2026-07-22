@@ -103,9 +103,9 @@
           <table class="table table-hover mb-0 align-middle">
             <thead class="table-dark">
               <tr>
-                <th><a href="?month={{ month }}&year={{ year }}&sort={% if sort == 'fecha' %}-fecha{% else %}fecha{% endif %}" class="text-decoration-none text-reset">Fecha{% if sort == 'fecha' %} ▲{% elif sort == '-fecha' %} ▼{% endif %}</a></th>
+                <th data-col="0"><a href="#" onclick="sortTable(0);return false" class="text-decoration-none text-reset">Fecha<span class="sort-indicator"></span></a></th>
                 <th>Descripción</th>
-                <th><a href="?month={{ month }}&year={{ year }}&sort={% if sort == 'categoria' %}-categoria{% else %}categoria{% endif %}" class="text-decoration-none text-reset">Categoría{% if sort == 'categoria' %} ▲{% elif sort == '-categoria' %} ▼{% endif %}</a></th>
+                <th data-col="2"><a href="#" onclick="sortTable(2);return false" class="text-decoration-none text-reset">Categoría<span class="sort-indicator"></span></a></th>
                 <th>Cuota</th>
                 <th class="text-end">Monto</th>
                 <th>Tipo</th>
@@ -174,6 +174,37 @@
       r.style.display = !category || r.dataset.category === category ? '' : 'none';
     });
     if (btn) btn.style.display = category ? '' : 'none';
+  }
+
+  let sortState = { col: null, asc: true };
+
+  function getSortValue(text) {
+    const dateMatch = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (dateMatch) return new Date(dateMatch[3], dateMatch[2] - 1, dateMatch[1]).getTime();
+    const num = parseFloat(text.replace(/[$.]/g, ''));
+    if (!isNaN(num)) return num;
+    return text.toLowerCase();
+  }
+
+  function sortTable(colIndex) {
+    const table = document.querySelector('.table-hover');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    if (rows.length <= 1 && rows[0]?.querySelector('td[colspan]')) return;
+
+    const asc = sortState.col === colIndex ? !sortState.asc : true;
+    sortState = { col: colIndex, asc };
+
+    rows.sort((a, b) => {
+      const va = getSortValue(a.cells[colIndex]?.textContent.trim() || '');
+      const vb = getSortValue(b.cells[colIndex]?.textContent.trim() || '');
+      return typeof va === 'number' ? (asc ? va - vb : vb - va) : asc ? (va > vb ? 1 : -1) : (vb > va ? 1 : -1);
+    });
+
+    rows.forEach(r => tbody.appendChild(r));
+    document.querySelectorAll('.sort-indicator').forEach(el => el.textContent = '');
+    const th = table.querySelector(`th[data-col="${colIndex}"]`);
+    if (th) th.querySelector('.sort-indicator').textContent = asc ? ' ▲' : ' ▼';
   }
 
   function navigateMonth(delta) {
