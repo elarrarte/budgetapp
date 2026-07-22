@@ -213,6 +213,48 @@ systemctl --user daemon-reload
 systemctl --user restart budgetapp.service
 ```
 
+## Deploy (actualización en OCI)
+
+### 1. Verificar IP origen
+
+```bash
+curl -s ifconfig.me
+```
+
+Comparar con `ssh_origin` en el proyecto `terraform-oci` (`locals.tf`).
+
+### 2. Si cambió la IP, actualizar security list
+
+Editar `locals.tf` → cambiar `ssh_origin` por la nueva IP (`xxx.xxx.xxx.xxx/32`) y ejecutar `terraform apply`.
+
+### 3. Conectarse a la instancia
+
+```bash
+ssh -A ubuntu@oci-host.sye.ar
+```
+
+La flag `-A` forwardea la llave SSH local para poder hacer `git pull` desde GitHub.
+
+### 4. Actualizar el código
+
+```bash
+cd budgetapp
+git pull
+```
+
+### 5. Reiniciar el servicio
+
+```bash
+systemctl --user restart budgetapp
+```
+
+### 6. Verificar
+
+```bash
+systemctl --user status budgetapp
+curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/
+```
+
 ## Estructura del proyecto
 
 ```
