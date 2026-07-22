@@ -309,7 +309,7 @@ def category_list(request, budget_pk):
 def category_create(request, budget_pk):
     budget = _get_budget_or_404(budget_pk, request.user)
     if request.method == "POST":
-        form = CategoryForm(request.POST)
+        form = CategoryForm(request.POST, budget=budget)
         if form.is_valid():
             cat = form.save(commit=False)
             cat.budget = budget
@@ -318,7 +318,7 @@ def category_create(request, budget_pk):
             messages.success(request, f"Categoría '{cat.name}' creada.")
             return redirect("category_list", budget_pk=budget.pk)
     else:
-        form = CategoryForm()
+        form = CategoryForm(budget=budget)
     return render(
         request,
         "core/category_form.html",
@@ -331,13 +331,13 @@ def category_edit(request, budget_pk, pk):
     budget = _get_budget_or_404(budget_pk, request.user)
     cat = get_object_or_404(Category, pk=pk, budget=budget)
     if request.method == "POST":
-        form = CategoryForm(request.POST, instance=cat)
+        form = CategoryForm(request.POST, instance=cat, budget=budget)
         if form.is_valid():
             form.save()
             messages.success(request, "Categoría actualizada.")
             return redirect("category_list", budget_pk=budget.pk)
     else:
-        form = CategoryForm(instance=cat)
+        form = CategoryForm(instance=cat, budget=budget)
     return render(
         request,
         "core/category_form.html",

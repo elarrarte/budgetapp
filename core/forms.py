@@ -49,6 +49,10 @@ class BudgetAssignForm(forms.Form):
 
 
 class CategoryForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.budget = kwargs.pop("budget", None)
+        super().__init__(*args, **kwargs)
+
     class Meta:
         model = Category
         fields = ("name", "color")
@@ -56,6 +60,20 @@ class CategoryForm(forms.ModelForm):
         widgets = {
             "color": forms.TextInput(attrs={"type": "color"}),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        name = cleaned_data.get("name")
+        if name and self.budget:
+            qs = Category.objects.filter(name__iexact=name, budget=self.budget)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                self.add_error(
+                    "name",
+                    "Ya existe una categoría con este nombre en el presupuesto.",
+                )
+        return cleaned_data
 
 
 class ExpenseForm(forms.ModelForm):
