@@ -37,10 +37,10 @@
       <table class="table table-hover mb-0 align-middle">
         <thead class="table-dark">
           <tr>
-            <th>Creación</th>
-            <th>Aplicación</th>
+            <th><a href="?month={{ month }}&year={{ year }}&sort={% if sort == 'creacion' %}-creacion{% else %}creacion{% endif %}" class="text-decoration-none text-reset">Creación{% if sort == 'creacion' %} ▲{% elif sort == '-creacion' %} ▼{% endif %}</a></th>
+            <th><a href="?month={{ month }}&year={{ year }}&sort={% if sort == 'aplicacion' %}-aplicacion{% else %}aplicacion{% endif %}" class="text-decoration-none text-reset">Aplicación{% if sort == 'aplicacion' %} ▲{% elif sort == '-aplicacion' %} ▼{% endif %}</a></th>
             <th>Descripción</th>
-            <th>Categoría</th>
+            <th><a href="?month={{ month }}&year={{ year }}&sort={% if sort == 'categoria' %}-categoria{% else %}categoria{% endif %}" class="text-decoration-none text-reset">Categoría{% if sort == 'categoria' %} ▲{% elif sort == '-categoria' %} ▼{% endif %}</a></th>
             <th>Tipo</th>
             <th>Cuotas</th>
             <th class="text-end">Monto</th>

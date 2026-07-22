@@ -240,6 +240,9 @@ def budget_dashboard(request, pk):
         month = request.session.get(f"dash_month_{pk}", now_local.month)
         year = request.session.get(f"dash_year_{pk}", now_local.year)
 
+    sort = request.GET.get("sort", "")
+    sort_map = {"categoria": "expense__category__name", "-categoria": "-expense__category__name"}
+
     installments = ExpenseInstallment.objects.filter(
         expense__budget=budget,
         effective_date__year=year,
@@ -247,6 +250,8 @@ def budget_dashboard(request, pk):
     ).select_related(
         "expense", "expense__category", "expense__created_by"
     ).prefetch_related("expense__installments")
+    if sort in sort_map:
+        installments = installments.order_by(sort_map[sort])
 
     total = sum(i.amount for i in installments)
 
@@ -274,7 +279,7 @@ def budget_dashboard(request, pk):
             "percentage": round(data["total"] / total * 100, 1) if total else 0,
             "color": data["color"],
         }
-        for name, data in sorted(by_category_data.items())
+        for name, data in sorted(by_category_data.items(), key=lambda x: x[1]["total"], reverse=True)
     ]
 
     return render(
@@ -290,6 +295,7 @@ def budget_dashboard(request, pk):
             "year": year,
             "months": range(1, 13),
             "years": range(2020, 2031),
+            "sort": sort,
         },
     )
 
@@ -373,6 +379,13 @@ def expense_list(request, budget_pk):
         effective_date__year=year,
         effective_date__month=month,
     )
+    sort = request.GET.get("sort", "")
+    sort_map = {
+        "categoria": "category__name", "-categoria": "-category__name",
+        "creacion": "expense_date", "-creacion": "-expense_date",
+        "aplicacion": "app_date", "-aplicacion": "-app_date",
+    }
+
     expenses = Expense.objects.filter(
         budget=budget,
         installments__effective_date__year=year,
@@ -382,6 +395,8 @@ def expense_list(request, budget_pk):
     ).distinct().select_related(
         "category", "created_by"
     ).prefetch_related("installments")
+    if sort in sort_map:
+        expenses = expenses.order_by(sort_map[sort])
 
     return render(
         request,
@@ -393,6 +408,7 @@ def expense_list(request, budget_pk):
             "year": year,
             "months": range(1, 13),
             "years": range(2020, 2031),
+            "sort": sort,
         },
     )
 

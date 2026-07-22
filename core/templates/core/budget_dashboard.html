@@ -103,7 +103,7 @@
               <tr>
                 <th>Fecha</th>
                 <th>Descripción</th>
-                <th>Categoría</th>
+                <th><a href="?month={{ month }}&year={{ year }}&sort={% if sort == 'categoria' %}-categoria{% else %}categoria{% endif %}" class="text-decoration-none text-reset">Categoría{% if sort == 'categoria' %} ▲{% elif sort == '-categoria' %} ▼{% endif %}</a></th>
                 <th>Cuota</th>
                 <th class="text-end">Monto</th>
                 <th>Tipo</th>
