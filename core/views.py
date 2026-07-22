@@ -241,7 +241,10 @@ def budget_dashboard(request, pk):
         year = request.session.get(f"dash_year_{pk}", now_local.year)
 
     sort = request.GET.get("sort", "")
-    sort_map = {"categoria": "expense__category__name", "-categoria": "-expense__category__name"}
+    sort_map = {
+        "categoria": "expense__category__name", "-categoria": "-expense__category__name",
+        "fecha": "effective_date", "-fecha": "-effective_date",
+    }
 
     installments = ExpenseInstallment.objects.filter(
         expense__budget=budget,
