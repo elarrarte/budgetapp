@@ -94,7 +94,9 @@
     </div>
     <div class="card shadow-sm">
       <div class="card-header">
-        <h6 class="mb-0">Detalle de gastos</h6>
+        <h6 class="mb-0">Detalle de gastos
+          <button id="clearFilter" class="btn btn-sm btn-outline-secondary ms-2" style="display:none" onclick="applyFilter(null)">Mostrar todas</button>
+        </h6>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
@@ -111,7 +113,7 @@
             </thead>
             <tbody>
               {% for inst in installments %}
-              <tr>
+              <tr data-category="{{ inst.expense.category.name|default:'Sin categoría' }}">
                 <td>{{ inst.effective_date|date:"d/m/Y" }}</td>
                 <td>{{ inst.expense.description }}</td>
                 <td>{{ inst.expense.category.name|default:"—" }}</td>
@@ -132,13 +134,15 @@
 {% endblock %}
 {% block extra_js %}
 <script>
+  let activeFilter = null;
+
   document.addEventListener('DOMContentLoaded', function () {
     const ctx = document.getElementById('chartCategory');
     if (!ctx) return;
     const labels = [{% for cat in categories_data %}'{{ cat.name }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
     const data = [{% for cat in categories_data %}{{ cat.total|stringformat:'.2f' }}{% if not forloop.last %}, {% endif %}{% endfor %}];
     const colors = [{% for cat in categories_data %}'{{ cat.color }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
       type: 'doughnut',
       data: {
         labels: labels,
@@ -146,12 +150,31 @@
       },
       options: {
         responsive: true,
+        onHover: (e, el) => { e.native.target.style.cursor = el.length ? 'pointer' : 'default'; },
         plugins: {
           legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } }
         }
       }
     });
+
+    ctx.onclick = function (e) {
+      const seg = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+      if (!seg.length) return;
+      const idx = seg[0].index;
+      const cat = labels[idx];
+      applyFilter(activeFilter === cat ? null : cat);
+    };
   });
+
+  function applyFilter(category) {
+    activeFilter = category;
+    const rows = document.querySelectorAll('[data-category]');
+    const btn = document.getElementById('clearFilter');
+    rows.forEach(r => {
+      r.style.display = !category || r.dataset.category === category ? '' : 'none';
+    });
+    if (btn) btn.style.display = category ? '' : 'none';
+  }
 
   function navigateMonth(delta) {
     const monthSel = document.querySelector('[name="month"]');
