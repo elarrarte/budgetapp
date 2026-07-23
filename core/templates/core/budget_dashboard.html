@@ -100,7 +100,7 @@
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table table-hover mb-0 align-middle">
+          <table class="table table-hover mb-0 align-middle table-card-mobile">
             <thead class="table-dark">
               <tr>
                 <th data-col="0"><a href="#" onclick="sortTable(0);return false" class="text-decoration-none text-reset">Fecha<span class="sort-indicator"></span></a></th>
@@ -114,12 +114,12 @@
             <tbody>
               {% for inst in installments %}
               <tr data-category="{{ inst.expense.category.name|default:'Sin categoría' }}">
-                <td>{{ inst.effective_date|date:"d/m/Y" }}</td>
-                <td>{{ inst.expense.description }}</td>
-                <td>{{ inst.expense.category.name|default:"—" }}</td>
-                <td>{{ inst.installment_number }}{% if inst.expense.installments.count > 1 %}/{{ inst.expense.installments.count }}{% endif %}</td>
-                <td class="text-end">${{ inst.amount|format_amount }}</td>
-                <td>{% if inst.expense.payment_type == "cash" %}<span class="badge bg-success">Efectivo</span>{% else %}<span class="badge bg-warning text-dark">Tarjeta</span>{% endif %}</td>
+                <td data-label="Fecha">{{ inst.effective_date|date:"d/m/Y" }}</td>
+                <td data-label="Descripción">{{ inst.expense.description }}</td>
+                <td data-label="Categoría">{{ inst.expense.category.name|default:"—" }}</td>
+                <td data-label="Cuota">{{ inst.installment_number }}{% if inst.expense.installments.count > 1 %}/{{ inst.expense.installments.count }}{% endif %}</td>
+                <td data-label="Monto" class="text-end">${{ inst.amount|format_amount }}</td>
+                <td data-label="Tipo">{% if inst.expense.payment_type == "cash" %}<span class="badge bg-success">Efectivo</span>{% else %}<span class="badge bg-warning text-dark">Tarjeta</span>{% endif %}</td>
               </tr>
               {% empty %}
               <tr><td colspan="6" class="text-center text-muted">Sin gastos en el período</td></tr>

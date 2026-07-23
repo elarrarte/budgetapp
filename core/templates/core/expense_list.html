@@ -34,7 +34,7 @@
 <div class="card shadow-sm">
   <div class="card-body p-0">
     <div class="table-responsive">
-      <table class="table table-hover mb-0 align-middle">
+      <table class="table table-hover mb-0 align-middle table-card-mobile">
         <thead class="table-dark">
           <tr>
             <th><a href="#" onclick="sortTable(0);return false" class="text-decoration-none text-reset">Creación<span class="sort-indicator"></span></a></th>
@@ -50,13 +50,13 @@
         <tbody>
           {% for e in expenses %}
           <tr>
-            <td>{{ e.expense_date|date:"d/m/Y" }}</td>
-            <td>{{ e.app_date|date:"d/m/Y" }}</td>
-            <td>{{ e.description }}</td>
-            <td>{{ e.category.name|default:"—" }}</td>
-            <td>{% if e.payment_type == "cash" %}<span class="badge bg-success">Efectivo</span>{% else %}<span class="badge bg-warning text-dark">Tarjeta</span>{% endif %}</td>
-            <td>{{ e.installments.count }}</td>
-            <td class="text-end">${{ e.installment_amount|format_amount }}</td>
+            <td data-label="Creación">{{ e.expense_date|date:"d/m/Y" }}</td>
+            <td data-label="Aplicación">{{ e.app_date|date:"d/m/Y" }}</td>
+            <td data-label="Descripción">{{ e.description }}</td>
+            <td data-label="Categoría">{{ e.category.name|default:"—" }}</td>
+            <td data-label="Tipo">{% if e.payment_type == "cash" %}<span class="badge bg-success">Efectivo</span>{% else %}<span class="badge bg-warning text-dark">Tarjeta</span>{% endif %}</td>
+            <td data-label="Cuotas">{{ e.installments.count }}</td>
+            <td data-label="Monto" class="text-end">${{ e.installment_amount|format_amount }}</td>
             <td class="text-end">
               <a href="{% url 'expense_edit' budget_pk=budget.pk pk=e.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
               <a href="{% url 'expense_delete' budget_pk=budget.pk pk=e.pk %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar gasto?')"><i class="bi bi-trash"></i></a>
