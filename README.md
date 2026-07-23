@@ -85,12 +85,14 @@ source venv/bin/activate
 # 2. Crear la base de datos (ya ejecutado, pero si empezás de cero)
 # python manage.py migrate
 
-# 3. Iniciar servidor (accesible desde cualquier dispositivo en la red)
-python manage.py runserver 0.0.0.0:8000
+# 3. Iniciar servidor en modo desarrollo (accesible desde cualquier dispositivo en la red)
+DEV=True python manage.py runserver 0.0.0.0:8000
 
 # 4. Abrir en el navegador
 # http://localhost:8000
 ```
+
+> Sin `DEV=True` la app arranca en modo producción (`DEBUG=False`). En el servidor OCI se omite la variable para mantener modo producción.
 
 ### Usuario admin por defecto
 
